@@ -50,6 +50,7 @@ public class AccelerationStructures
     public static ComputeBuffer     TrisVertexBuffer;
     public static ComputeBuffer     VertexBuffer;
     public static ComputeBuffer     MaterialBuffer;
+    public static ComputeBuffer     MaterialIndexBuffer;
     public static int               NumTris;
 
     public static Bounds            SceneBounds;
@@ -61,9 +62,16 @@ public class AccelerationStructures
 
     public MeshObjectDetails[] meshObjects;
 
-
+    public static void ClearBuffers() {
+        if(TriangleBuffer!=null) TriangleBuffer.Release();
+        if (TrisVertexBuffer != null) TrisVertexBuffer.Release();
+        if (VertexBuffer != null) VertexBuffer.Release();
+        if (MaterialBuffer != null) MaterialBuffer.Release();
+         
+    }
     public static void BuildTriangleList()
     {
+
         NumTris = 0;
 
         float max_x, max_y, max_z;
@@ -71,29 +79,48 @@ public class AccelerationStructures
         float min_x, min_y, min_z;
         min_x = min_y = min_z = float.MaxValue;
 
-
-        if (TriangleBuffer != null)
-        {
-            TriangleBuffer.Release();
-        }
-
-        if (TrisVertexBuffer != null)
-        {
-            TrisVertexBuffer.Release();
-        }
+        ClearBuffers();
 
         int current_material_index = 0;
         List<Matrix4x4> triangle_list = new List<Matrix4x4>();
         List<Matrix4x4> material_list = new List<Matrix4x4>();
         List<Matrix4x4> vertex_list = new List<Matrix4x4>();
         List<Matrix4x4> vertex_list_2 = new List<Matrix4x4>();
+        List<int> material_index = new List<int>();
 
+        Shader defaultShader = Shader.Find("Standard (Specular setup)");
+       
         //gather all scene objects (only mesh renderers, no skinned meshes)
         var renderers = GameObject.FindObjectsOfType<MeshRenderer>();
         foreach (MeshRenderer r in renderers)
         {
             Mesh m = r.gameObject.GetComponent<MeshFilter>().sharedMesh;
+
+
             Material mat = r.GetComponent<MeshRenderer>().sharedMaterial;
+            Matrix4x4 mats = new Matrix4x4();
+
+            mats.SetRow(0, new Vector3(mat.GetColor("_Color").r, mat.GetColor("_Color").g, mat.GetColor("_Color").b));
+            if (mat.shader != defaultShader)
+            {
+                Debug.Log("Please use Standard (Specular Setup) for your shaders for accurate results");
+                mats.SetRow(1, new Vector3(0, 0, 0));
+            }
+            if (mat.shader == defaultShader)
+            {
+                mats.SetRow(1, new Vector3(mat.GetColor("_SpecColor").r, mat.GetColor("_SpecColor").g, mat.GetColor("_SpecColor").b));
+
+            }
+
+
+
+            mats.SetRow(2, new Vector3(mat.GetColor("_EmissionColor").r, mat.GetColor("_EmissionColor").g, mat.GetColor("_EmissionColor").b));
+
+            Vector3 tss = new Vector3(mat.GetColor("_Color").a, mat.GetFloat("_Glossiness"), /*r.GetComponent<RayTracingObject>()  ? r.GetComponent<RayTracingObject>().IOR :*/ 1);
+
+            //Translucency, Smoothness, Refraction (Needs IOR Reference)
+            mats.SetRow(3, tss);
+            material_list.Add(mats);
 
             int[] tris = m.triangles;
             int num_tris = tris.Length / 3;
@@ -135,38 +162,9 @@ public class AccelerationStructures
 
                 vertex_list.Add(vm);
 
-                //Vector3 v00 = (verts[tris[base_index + 0]]); //vertices are in world space
-                //Vector3 v01 = (verts[tris[base_index + 1]]);
-                //Vector3 v02 = (verts[tris[base_index + 2]]);
+                int x = current_material_index;
+                material_index.Add(x);
 
-                //Matrix4x4 vm2 = new Matrix4x4();
-                //vm2.SetRow(0, v00);
-                //vm2.SetRow(1, v01);
-                //vm2.SetRow(2, v02);
-
-                //vertex_list_2.Add(vm2);
-                Matrix4x4 mats = new Matrix4x4();
-
-                mats.SetRow(0, new Vector3(mat.GetColor("_Color").r, mat.GetColor("_Color").g, mat.GetColor("_Color").b));
-                if (mat.shader != Shader.Find("Standard (Specular setup)"))
-                {
-                    Debug.Log("Please use Standard (Specular Setup) for your shaders for accurate results");
-                    mats.SetRow(1, new Vector3(0,0, 0));
-                }
-                if(mat.shader == Shader.Find("Standard (Specular setup)")) {
-                    mats.SetRow(1, new Vector3(mat.GetColor("_SpecColor").r, mat.GetColor("_SpecColor").g, mat.GetColor("_SpecColor").b));
-
-                }
-
-
-
-                mats.SetRow(2, new Vector3(mat.GetColor("_EmissionColor").r, mat.GetColor("_EmissionColor").g, mat.GetColor("_EmissionColor").b));
-
-                Vector3 tss = new Vector3(mat.GetColor("_Color").a, mat.GetFloat("_Glossiness"), /*r.GetComponent<RayTracingObject>()  ? r.GetComponent<RayTracingObject>().IOR :*/ 1);
-
-                //Translucency, Smoothness, Refraction (Needs IOR Reference)
-                mats.SetRow(3, tss);
-                material_list.Add(mats);
 
 
                 //scene bounding calculation
@@ -196,6 +194,9 @@ public class AccelerationStructures
 
             MaterialBuffer = new ComputeBuffer(material_list.Count, 64);
             MaterialBuffer.SetData<Matrix4x4>(material_list);
+
+            MaterialIndexBuffer = new ComputeBuffer(material_index.Count, 4);
+            MaterialIndexBuffer.SetData<int>(material_index);
 
 
             //VertexBuffer = new ComputeBuffer(vertex_list_2.Count, 64);

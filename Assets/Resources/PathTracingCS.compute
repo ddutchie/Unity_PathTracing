@@ -10,6 +10,7 @@ RWTexture2D<float4> output;
 //scene data
 StructuredBuffer<float4x4> triangle_list;
 StructuredBuffer<float4x4> material_list;
+StructuredBuffer<int> material_index_list;
 StructuredBuffer<uint2> grid_data;
 StructuredBuffer<uint> index_list;
 int num_tris;
@@ -146,7 +147,8 @@ bool SceneIntersection(Ray ray, out float3 position, out float3 normal, out RayH
 			float4x4 tri = triangle_list[min_tris_index];
 			normal = GetNormal(tri, min_b);
 			hit.normal = normal;
-			float4x4 mat = material_list[min_tris_index];
+			int material_index = material_index_list[min_tris_index];
+			float4x4 mat = material_list[material_index];
 			hit.position = min_t;
 
 			hit.albedo = mat[0];

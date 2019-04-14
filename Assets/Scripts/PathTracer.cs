@@ -55,6 +55,7 @@ public class PathTracer : MonoBehaviour
         path_tracing_CS.SetBuffer(path_tracing_kernel, "grid_data", AccelerationStructures.GridData);
         path_tracing_CS.SetBuffer(path_tracing_kernel, "index_list", AccelerationStructures.IndexList);
         path_tracing_CS.SetBuffer(path_tracing_kernel, "material_list", AccelerationStructures.MaterialBuffer);
+        path_tracing_CS.SetBuffer(path_tracing_kernel, "material_index_list", AccelerationStructures.MaterialIndexBuffer);
         path_tracing_CS.SetInt("num_tris", AccelerationStructures.NumTris);
         path_tracing_CS.SetVector("grid_min", AccelerationStructures.SceneBounds.min);
         path_tracing_CS.SetVector("grid_max", AccelerationStructures.SceneBounds.max);

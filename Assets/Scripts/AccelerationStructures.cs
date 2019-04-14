@@ -8,6 +8,18 @@ public struct TrisCellPair
     public uint cell_id;
 }
 
+public struct MeshObjectDetails {
+    public uint start_offset;
+    public Vector3 albedo;
+    public Vector3 specular;
+    public float smoothness;
+    public Vector3 emission;
+    public float transparency;
+    public float refraction;
+    public int canShadow;
+}
+
+
 public struct GridDataEntry
 {
     public uint start_offset;
@@ -36,6 +48,8 @@ public class AccelerationStructures
 
     public static ComputeBuffer     TriangleBuffer;
     public static ComputeBuffer     TrisVertexBuffer;
+    public static ComputeBuffer     VertexBuffer;
+    public static ComputeBuffer     MaterialBuffer;
     public static int               NumTris;
 
     public static Bounds            SceneBounds;
@@ -44,7 +58,10 @@ public class AccelerationStructures
     public static ComputeBuffer     IndexList;
     public static ComputeBuffer     GridData;
     public static UniformGridInfo   GridInfo;
-    
+
+    public MeshObjectDetails[] meshObjects;
+
+
     public static void BuildTriangleList()
     {
         NumTris = 0;
@@ -67,13 +84,16 @@ public class AccelerationStructures
 
         int current_material_index = 0;
         List<Matrix4x4> triangle_list = new List<Matrix4x4>();
+        List<Matrix4x4> material_list = new List<Matrix4x4>();
         List<Matrix4x4> vertex_list = new List<Matrix4x4>();
+        List<Matrix4x4> vertex_list_2 = new List<Matrix4x4>();
 
         //gather all scene objects (only mesh renderers, no skinned meshes)
         var renderers = GameObject.FindObjectsOfType<MeshRenderer>();
         foreach (MeshRenderer r in renderers)
         {
             Mesh m = r.gameObject.GetComponent<MeshFilter>().sharedMesh;
+            Material mat = r.GetComponent<MeshRenderer>().sharedMaterial;
 
             int[] tris = m.triangles;
             int num_tris = tris.Length / 3;
@@ -115,6 +135,28 @@ public class AccelerationStructures
 
                 vertex_list.Add(vm);
 
+                //Vector3 v00 = (verts[tris[base_index + 0]]); //vertices are in world space
+                //Vector3 v01 = (verts[tris[base_index + 1]]);
+                //Vector3 v02 = (verts[tris[base_index + 2]]);
+
+                //Matrix4x4 vm2 = new Matrix4x4();
+                //vm2.SetRow(0, v00);
+                //vm2.SetRow(1, v01);
+                //vm2.SetRow(2, v02);
+
+                //vertex_list_2.Add(vm2);
+
+                Matrix4x4 mats = new Matrix4x4();
+                mats.SetRow(0, new Vector3(mat.GetColor("_Color").r, mat.GetColor("_Color").g, mat.GetColor("_Color").b));
+                mats.SetRow(1, new Vector3(mat.GetColor("_SpecColor").r, mat.GetColor("_SpecColor").g, mat.GetColor("_SpecColor").b));
+                mats.SetRow(2, new Vector3(mat.GetColor("_EmissionColor").r, mat.GetColor("_EmissionColor").g, mat.GetColor("_EmissionColor").b));
+
+                //Translucency, Smoothness, Refraction
+                Vector3 tss = new Vector3(mat.GetColor("_Color").a, mat.GetFloat("_Glossiness"), r.GetComponent<RayTracingObject>()  ? r.GetComponent<RayTracingObject>().IOR : 1);
+                mats.SetRow(3, tss);
+                material_list.Add(mats);
+
+
                 //scene bounding calculation
                 CheckRange(v0.x, ref min_x, ref max_x);
                 CheckRange(v0.y, ref min_y, ref max_y);
@@ -140,6 +182,13 @@ public class AccelerationStructures
             TrisVertexBuffer = new ComputeBuffer(vertex_list.Count, 64);
             TrisVertexBuffer.SetData<Matrix4x4>(vertex_list);
 
+            MaterialBuffer = new ComputeBuffer(material_list.Count, 64);
+            MaterialBuffer.SetData<Matrix4x4>(material_list);
+
+
+            //VertexBuffer = new ComputeBuffer(vertex_list_2.Count, 64);
+            //VertexBuffer.SetData<Matrix4x4>(vertex_list_2);
+
             NumTris = triangle_list.Count;
 
             Vector3 min = new Vector3(min_x, min_y, min_z) - new Vector3(0.1f, 0.1f, 0.1f);
@@ -160,7 +209,7 @@ public class AccelerationStructures
         //compute the number of grid cells (Wald et al. 2006)
         float k = 5;
         float V = SceneBounds.size.x * SceneBounds.size.y * SceneBounds.size.z;
-        float m = Mathf.Pow(k * NumTris / V, 1f / 3f);
+        float m = Mathf.Pow(k * NumTris / V, 1f / 2f);
         int nx = Mathf.CeilToInt(SceneBounds.size.x * m);
         int ny = Mathf.CeilToInt(SceneBounds.size.y * m);
         int nz = Mathf.CeilToInt(SceneBounds.size.z * m);
@@ -274,7 +323,7 @@ public class AccelerationStructures
                 current_cell = pairs[i].cell_id;
             }
         }
-
+        
         grid_data[current_cell] = new GridDataEntry(offset, tris_count);
 
         GridData.SetData(grid_data);

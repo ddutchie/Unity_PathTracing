@@ -16,6 +16,8 @@ struct Ray
 	float3 direction;
 	float3 inv_direction;
 	int3 sign;
+	float3 energy;
+
 };
 
 Ray MakeRay(float3 origin, float3 direction)
@@ -33,7 +35,7 @@ Ray MakeRay(float3 origin, float3 direction)
 	output.direction = direction;
 	output.inv_direction = inv_direction;
 	output.sign = sign;
-
+	output.energy = float3(1.0f, 1.0f, 1.0f);
 	return output;
 }
 
@@ -60,6 +62,7 @@ float3 GetNormal(float4x4 tri, float3 b)
 	float3 n2 = float3(tri._m03, tri._m13, sqrt(1.0001 - tri._m03 * tri._m03 - tri._m13 * tri._m13) * (z3_positive ? 1 : -1));
 	return (n0 * b.x + n1 * b.y + n2 * b.z);
 }
+static const float EPSILON = 1e-8;
 
 //taken from "gpu-based techniques for global illumination effects"
 bool ray_triangle_intersection(in Ray ray, float4x4 tri, out float t, out float3 b)
@@ -80,7 +83,7 @@ bool ray_triangle_intersection(in Ray ray, float4x4 tri, out float t, out float3
 			ris = true;
 		}
 	}
-	
+
 	//backface culling
 	if (ris)
 	{
@@ -91,6 +94,8 @@ bool ray_triangle_intersection(in Ray ray, float4x4 tri, out float t, out float3
 
 	return ris;
 }
+
+
 
 bool point_inside_box(float3 p, float3 box_min, float3 box_max)
 {

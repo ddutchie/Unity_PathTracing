@@ -151,8 +151,8 @@ public class AccelerationStructures
                 mats.SetRow(1, new Vector3(mat.GetColor("_SpecColor").r, mat.GetColor("_SpecColor").g, mat.GetColor("_SpecColor").b));
                 mats.SetRow(2, new Vector3(mat.GetColor("_EmissionColor").r, mat.GetColor("_EmissionColor").g, mat.GetColor("_EmissionColor").b));
 
-                //Translucency, Smoothness, Refraction
-                Vector3 tss = new Vector3(mat.GetColor("_Color").a, mat.GetFloat("_Glossiness"), r.GetComponent<RayTracingObject>()  ? r.GetComponent<RayTracingObject>().IOR : 1);
+                //Translucency, Smoothness, Refraction (Needs IOR Reference)
+                Vector3 tss = new Vector3(mat.GetColor("_Color").a, mat.GetFloat("_Glossiness"), /*r.GetComponent<RayTracingObject>()  ? r.GetComponent<RayTracingObject>().IOR :*/ 1);
                 mats.SetRow(3, tss);
                 material_list.Add(mats);
 

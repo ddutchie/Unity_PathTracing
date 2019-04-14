@@ -153,3 +153,47 @@ float3 HemisphereSample(float u, float v, float3 N)
 	
 	return TangentX * H.x + TangentY * H.y + N * H.z;
 }
+
+
+bool Refract(float3 v, float3 n, float niOverNt, out float3 refracted) {
+	float3 uv = normalize(v);
+	float dt = dot(uv, n);
+	float discriminant = 1.0 - niOverNt * niOverNt * (1 - dt * dt);
+	if (discriminant > 0) {
+		refracted = niOverNt * (v - n * dt) - n * sqrt(discriminant);
+		return true;
+	}
+	return false;
+}
+
+float Schlick(float cosine, float refIdx) {
+	float r0 = (1 - refIdx) / (1 + refIdx);
+	r0 = r0 * r0;
+	return r0 + (1 - r0) * pow((1 - cosine), 5);
+}
+float sdot(float3 x, float3 y, float f = 1.0f)
+{
+	return saturate(dot(x, y) * f);
+}
+
+float energy(float3 color)
+{
+	return dot(color, 1.0f / 3.0f);
+}
+float SmoothnessToPhongAlpha(float s)
+{
+	return pow(1000.0f, s * s);
+}
+
+float3x3 GetTangentSpace(float3 normal)
+{
+	// Choose a helper vector for the cross product
+	float3 helper = float3(1, 0, 0);
+	if (abs(normal.x) > 0.99f)
+		helper = float3(0, 0, 1);
+
+	// Generate vectors
+	float3 tangent = normalize(cross(normal, helper));
+	float3 binormal = normalize(cross(normal, tangent));
+	return float3x3(tangent, binormal, normal);
+}

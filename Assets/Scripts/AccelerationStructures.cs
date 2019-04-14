@@ -145,14 +145,26 @@ public class AccelerationStructures
                 //vm2.SetRow(2, v02);
 
                 //vertex_list_2.Add(vm2);
-
                 Matrix4x4 mats = new Matrix4x4();
+
                 mats.SetRow(0, new Vector3(mat.GetColor("_Color").r, mat.GetColor("_Color").g, mat.GetColor("_Color").b));
-                mats.SetRow(1, new Vector3(mat.GetColor("_SpecColor").r, mat.GetColor("_SpecColor").g, mat.GetColor("_SpecColor").b));
+                if (mat.shader != Shader.Find("Standard (Specular setup)"))
+                {
+                    Debug.Log("Please use Standard (Specular Setup) for your shaders for accurate results");
+                    mats.SetRow(1, new Vector3(0,0, 0));
+                }
+                if(mat.shader == Shader.Find("Standard (Specular setup)")) {
+                    mats.SetRow(1, new Vector3(mat.GetColor("_SpecColor").r, mat.GetColor("_SpecColor").g, mat.GetColor("_SpecColor").b));
+
+                }
+
+
+
                 mats.SetRow(2, new Vector3(mat.GetColor("_EmissionColor").r, mat.GetColor("_EmissionColor").g, mat.GetColor("_EmissionColor").b));
 
-                //Translucency, Smoothness, Refraction (Needs IOR Reference)
                 Vector3 tss = new Vector3(mat.GetColor("_Color").a, mat.GetFloat("_Glossiness"), /*r.GetComponent<RayTracingObject>()  ? r.GetComponent<RayTracingObject>().IOR :*/ 1);
+
+                //Translucency, Smoothness, Refraction (Needs IOR Reference)
                 mats.SetRow(3, tss);
                 material_list.Add(mats);
 

@@ -388,10 +388,10 @@ void PathTrace_uniform_grid(CS_INPUT input)
 			}
 			else
 			{
-				L += float3(1.5, 1.5, 1.5) *  ray.energy;  //float3(1.5, 1.5, 1.5) is the temporary skybox value
+				L += SimpleGradient(ray) *  ray.energy;  //float3(1.5, 1.5, 1.5) is the temporary skybox value
 
 				if (bounce == 0)
-					L = float3(0, 0, 0);
+					//L = float3(0, 0, 0);
 				if (!any(ray.energy))
 					break;
 				break;

@@ -197,3 +197,9 @@ float3x3 GetTangentSpace(float3 normal)
 	float3 binormal = normalize(cross(normal, tangent));
 	return float3x3(tangent, binormal, normal);
 }
+//Simple Sky Gradient 
+float3 SimpleGradient(Ray r) {
+	float3 unitDirection = (r.direction);
+	float t = 0.5 * (unitDirection.y + 1.0);
+	return 1.0 * ((1.0 - t) * float3(1.0, 1.0, 1.0) + t * float3(0.5, 0.7, 1.0));
+}

@@ -67,7 +67,8 @@ public class AccelerationStructures
         if (TrisVertexBuffer != null) TrisVertexBuffer.Release();
         if (VertexBuffer != null) VertexBuffer.Release();
         if (MaterialBuffer != null) MaterialBuffer.Release();
-         
+        if (MaterialIndexBuffer != null) MaterialIndexBuffer.Release();
+
     }
     public static void BuildTriangleList()
     {

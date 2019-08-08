@@ -3,6 +3,14 @@
   <img src="screenshot.jpg" title="banner">
 </p>
 
+<p align="center">
+  <img src="60,01613-2000.png_output.png" title="banner">
+</p>
+
+<p align="center">
+  <img src="65,73929-2000.png_output.png" title="banner">
+</p>
+
 ## Overview
 
 Work in Progress of a GPU Path tracer for unity
